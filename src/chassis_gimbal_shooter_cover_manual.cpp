@@ -11,9 +11,7 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
 {
   wheel_online_sub_ = nh.subscribe<rm_ecat_msgs::RmEcatStandardSlaveReadings>(
       "/rm_ecat_hw/rm_readings", 10, &ChassisGimbalShooterCoverManual::wheelsOnlineCallback, this);
-  ros::NodeHandle cover_nh(nh, "cover");
   nh.param("supply_frame", supply_frame_, std::string("supply_frame"));
-  cover_command_sender_ = new rm_common::JointPositionBinaryCommandSender(cover_nh);
   ros::NodeHandle wireless_nh(nh, "wireless");
   nh.param("wireless_frame", wireless_frame_, std::string("wireless_frame"));
   ros::NodeHandle buff_switch_nh(nh, "buff_switch");
@@ -121,8 +119,7 @@ void ChassisGimbalShooterCoverManual::checkWheelsOnline()
 void ChassisGimbalShooterCoverManual::updatePc(const rm_msgs::DbusData::ConstPtr& dbus_data)
 {
   ChassisGimbalShooterManual::updatePc(dbus_data);
-  gimbal_cmd_sender_->setRate(-dbus_data->m_x * gimbal_scale_,
-                              cover_command_sender_->getState() ? 0.0 : -dbus_data->m_y * gimbal_scale_);
+  gimbal_cmd_sender_->setRate(-dbus_data->m_x * gimbal_scale_, -dbus_data->m_y * gimbal_scale_);
   if (is_gyro_)
   {
     if (switch_buff_srv_->getTarget() != rm_msgs::StatusChangeRequest::ARMOR)
@@ -142,7 +139,6 @@ void ChassisGimbalShooterCoverManual::updatePc(const rm_msgs::DbusData::ConstPtr
 
 void ChassisGimbalShooterCoverManual::checkReferee()
 {
-  manual_to_referee_pub_data_.cover_state = cover_command_sender_->getState();
   if (switch_detection_srv_->getTarget() != rm_msgs::StatusChangeRequest::ARMOR)
     manual_to_referee_pub_data_.det_target = switch_buff_type_srv_->getTarget();
   else
@@ -177,45 +173,9 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
   {
     chassis_cmd_sender_->getMsg()->follow_source_frame = supply_frame_;
     chassis_cmd_sender_->setMode(rm_msgs::ChassisCmd::FOLLOW);
-    cover_close_ = false;
-    try
-    {
-      double roll, pitch, yaw;
-      quatToRPY(tf_buffer_.lookupTransform("base_link", supply_frame_, ros::Time(0)).transform.rotation, roll, pitch,
-                yaw);
-      if (std::abs(yaw) < 0.05)
-        cover_command_sender_->on();
-    }
-    catch (tf2::TransformException& ex)
-    {
-      ROS_WARN("%s", ex.what());
-    }
   }
   else
   {
-    cover_command_sender_->off();
-    if (!cover_close_)
-    {
-      try
-      {
-        double roll, pitch, yaw;
-        quatToRPY(tf_buffer_.lookupTransform("base_link", "cover", ros::Time(0)).transform.rotation, roll, pitch, yaw);
-        if (pitch - cover_command_sender_->getMsg()->data > 0.05)
-        {
-          chassis_cmd_sender_->getMsg()->follow_source_frame = supply_frame_;
-          chassis_cmd_sender_->setMode(rm_msgs::ChassisCmd::FOLLOW);
-        }
-        else
-        {
-          cover_close_ = true;
-          chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
-        }
-      }
-      catch (tf2::TransformException& ex)
-      {
-        ROS_WARN("%s", ex.what());
-      }
-    }
     if (need_wireless_)
     {
       chassis_cmd_sender_->getMsg()->follow_source_frame = wireless_frame_;
@@ -225,7 +185,6 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
       chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
   }
   ChassisGimbalShooterManual::sendCommand(time);
-  cover_command_sender_->sendCommand(time);
 }
 
 void ChassisGimbalShooterCoverManual::updateWheelsState(const rm_ecat_msgs::RmEcatStandardSlaveReadings::ConstPtr& data,
@@ -384,19 +343,15 @@ void ChassisGimbalShooterCoverManual::dRelease()
 
 void ChassisGimbalShooterCoverManual::ctrlZPress()
 {
-  if (!cover_command_sender_->getState())
+  if (!supply_)
     chassis_cmd_sender_->power_limit_->updateState(rm_common::PowerLimit::CHARGE);
   else
     chassis_cmd_sender_->power_limit_->updateState(rm_common::PowerLimit::NORMAL);
-  supply_ = !cover_command_sender_->getState();
+  supply_ = !supply_;
   if (supply_)
-  {
     changeSpeedMode(LOW);
-  }
   else
-  {
     changeSpeedMode(NORMAL);
-  }
 }
 
 void ChassisGimbalShooterCoverManual::ctrlXPress()

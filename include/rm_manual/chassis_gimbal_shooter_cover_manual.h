@@ -70,7 +70,6 @@ protected:
   rm_common::SwitchDetectionCaller* switch_buff_srv_{};
   rm_common::SwitchDetectionCaller* switch_buff_type_srv_{};
   rm_common::SwitchDetectionCaller* switch_exposure_srv_{};
-  rm_common::JointPositionBinaryCommandSender* cover_command_sender_{};
   InputEvent ctrl_z_event_, z_event_;
   std::string supply_frame_;
   std::string wireless_frame_;
@@ -79,7 +78,6 @@ protected:
   std::vector<bool> wheels_online_state_;
   bool supply_ = false;
   bool need_wireless_ = false;
-  bool cover_close_ = true;
   bool last_power_chassis_output_ = false;
   int count_{};
 };
