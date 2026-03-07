@@ -23,7 +23,7 @@ void BalanceManual::sendCommand(const ros::Time& time)
     chassis_cmd_sender_->getMsg()->follow_source_frame = reverse_frame_;
   else
     chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
-  
+
   ChassisGimbalShooterManual::sendCommand(time);
 }
 
