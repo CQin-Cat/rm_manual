@@ -62,7 +62,7 @@ protected:
     shooter_cmd_sender_->setMode(rm_msgs::ShootCmd::READY);
     prepare_shoot_ = true;
   }
-  void mouseRightPress();
+  virtual void mouseRightPress();
   void mouseRightRelease()
   {
     gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
@@ -120,7 +120,6 @@ protected:
   rm_common::JointPositionBinaryCommandSender* scope_cmd_sender_{};
   rm_common::JointPositionBinaryCommandSender* image_transmission_cmd_sender_{};
   rm_common::SwitchDetectionCaller* switch_detection_srv_{};
-  rm_common::SwitchDetectionCaller* switch_detection_left_srv_{};
   rm_common::SwitchDetectionCaller* switch_armor_target_srv_{};
   rm_common::CalibrationQueue* chassis_calibration_;
   rm_common::CalibrationQueue* shooter_calibration_;

@@ -22,18 +22,14 @@ protected:
   void changeSpeedMode(SpeedMode speed_mode);
   double getDynamicScale(const double base_scale, const double amplitude, const double period, const double phase);
   void changeGyroSpeedMode(SpeedMode speed_mode);
-  void checkWheelsOnline();
   void updatePc(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void checkKeyboard(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void checkReferee() override;
   void sendCommand(const ros::Time& time) override;
-  void updateWheelsState(const rm_ecat_msgs::RmEcatStandardSlaveReadings::ConstPtr& data,
-                         const std::vector<std::string>& chassis_motor);
   void rightSwitchDownRise() override;
   void rightSwitchMidRise() override;
   void rightSwitchUpRise() override;
-  void wheelsOnlineCallback(const rm_ecat_msgs::RmEcatStandardSlaveReadings::ConstPtr& data);
-  void gameRobotStatusCallback(const rm_msgs::GameRobotStatus::ConstPtr& data) override;
+  void mouseRightPress() override;
   void ePress() override;
   void eRelease() override;
   void bPress() override;
@@ -73,12 +69,9 @@ protected:
   InputEvent ctrl_z_event_, z_event_;
   std::string supply_frame_;
   std::string wireless_frame_;
-  ros::Time last_switch_time_, last_check_wheels_time_;
-  std::vector<std::string> chassis_motor_;
-  std::vector<bool> wheels_online_state_;
+  ros::Time last_switch_time_;
   bool supply_ = false;
   bool need_wireless_ = false;
-  bool last_power_chassis_output_ = false;
   int count_{};
 };
 }  // namespace rm_manual
