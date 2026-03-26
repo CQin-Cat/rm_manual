@@ -301,6 +301,11 @@ void ChassisGimbalShooterCoverManual::ctrlZPress()
     changeSpeedMode(NORMAL);
 }
 
+void ChassisGimbalShooterCoverManual::ctrlZRelease()
+{
+  gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
+};
+
 void ChassisGimbalShooterCoverManual::ctrlXPress()
 {
   if (!need_wireless_)

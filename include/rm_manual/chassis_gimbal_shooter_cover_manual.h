@@ -46,15 +46,17 @@ protected:
   void aRelease() override;
   void sRelease() override;
   void dRelease() override;
+  void bRelease() override
+  {
+  }
   void zPress() override
   {
   }
-
-  virtual void ctrlZPress();
-  virtual void ctrlZRelease()
+  void ctrlCPress() override
   {
-    gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-  };
+  }
+  virtual void ctrlZPress();
+  virtual void ctrlZRelease();
   virtual void ctrlXPress();
 
   ros::Subscriber wheel_online_sub_;
@@ -70,8 +72,8 @@ protected:
   std::string supply_frame_;
   std::string wireless_frame_;
   ros::Time last_switch_time_;
-  bool supply_ = false;
-  bool need_wireless_ = false;
+  bool supply_ = { false };
+  bool need_wireless_ = { false };
   int count_{};
 };
 }  // namespace rm_manual
