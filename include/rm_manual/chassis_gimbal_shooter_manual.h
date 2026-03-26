@@ -19,10 +19,14 @@ public:
 protected:
   void ecatReconnected() override;
   void checkReferee() override;
+  void checkWheelsOnline();
   void checkKeyboard(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void updateRc(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void updatePc(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void sendCommand(const ros::Time& time) override;
+  void updateWheelsState(const rm_ecat_msgs::RmEcatStandardSlaveReadings::ConstPtr& data,
+                         const std::vector<std::string>& chassis_motor);
+  void wheelsOnlineCallback(const rm_ecat_msgs::RmEcatStandardSlaveReadings::ConstPtr& data);
   void chassisOutputOn() override;
   void shooterOutputOn() override;
   void gimbalOutputOn() override;
@@ -128,6 +132,11 @@ protected:
   rm_common::CalibrationQueue* chassis_calibration_;
   rm_common::CalibrationQueue* shooter_calibration_;
   rm_common::CalibrationQueue* gimbal_calibration_;
+
+  ros::Subscriber wheel_online_sub_;
+  ros::Time last_wheels_power_time_;
+  std::vector<std::string> chassis_motor_;
+  std::vector<bool> wheels_online_state_;
 
   std_msgs::Float32MultiArray ballistic_solution_;
   geometry_msgs::PointStamped point_out_;
