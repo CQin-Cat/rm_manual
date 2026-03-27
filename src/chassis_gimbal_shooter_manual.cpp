@@ -254,7 +254,8 @@ void ChassisGimbalShooterManual::ballisticSolutionCallback(const std_msgs::Float
 void ChassisGimbalShooterManual::sendCommand(const ros::Time& time)
 {
   ChassisGimbalManual::sendCommand(time);
-  chassis_active_sus_cmd_sender_->sendCommand(time);
+  if (chassis_active_sus_cmd_sender_)
+    chassis_active_sus_cmd_sender_->sendCommand(time);
   shooter_cmd_sender_->sendCommand(time);
   if (camera_switch_cmd_sender_)
     camera_switch_cmd_sender_->sendCommand(time);
@@ -793,6 +794,9 @@ void ChassisGimbalShooterManual::vPress()
 
 void ChassisGimbalShooterManual::qPress()
 {
+  if (!chassis_active_sus_cmd_sender_)
+    return;
+
   if (chassis_active_sus_cmd_sender_->getMsg()->mode == rm_msgs::ChassisActiveSusCmd::DOWN && !deployed_)
   {
     chassis_active_sus_cmd_sender_->setMode(rm_msgs::ChassisActiveSusCmd::MID);
