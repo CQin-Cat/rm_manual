@@ -125,12 +125,7 @@ void ChassisGimbalShooterCoverManual::checkKeyboard(const rm_msgs::DbusData::Con
 
 void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
 {
-  if (supply_)
-  {
-    chassis_cmd_sender_->getMsg()->follow_source_frame = supply_frame_;
-    chassis_cmd_sender_->setMode(rm_msgs::ChassisCmd::FOLLOW);
-  }
-  else if (need_wireless_)
+  if (need_wireless_)
   {
     chassis_cmd_sender_->getMsg()->follow_source_frame = wireless_frame_;
     chassis_cmd_sender_->setMode(rm_msgs::ChassisCmd::FOLLOW);
