@@ -58,6 +58,8 @@ protected:
   virtual void ctrlZPress();
   virtual void ctrlZRelease();
   virtual void ctrlXPress();
+  virtual void ctrlEPress();
+  virtual void ctrlERelease();
 
   ros::Subscriber wheel_online_sub_;
 
@@ -68,7 +70,7 @@ protected:
   rm_common::SwitchDetectionCaller* switch_buff_srv_{};
   rm_common::SwitchDetectionCaller* switch_buff_type_srv_{};
   rm_common::SwitchDetectionCaller* switch_exposure_srv_{};
-  InputEvent ctrl_z_event_, z_event_;
+  InputEvent ctrl_z_event_, z_event_, ctrl_e_event_;
   std::string supply_frame_;
   std::string wireless_frame_;
   ros::Time last_switch_time_;
