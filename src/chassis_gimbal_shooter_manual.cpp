@@ -841,7 +841,6 @@ void ChassisGimbalShooterManual::shiftPress()
     gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
   }
   chassis_cmd_sender_->power_limit_->updateState(rm_common::PowerLimit::BURST);
-  chassis_cmd_sender_->power_limit_->setStartBurstTime(ros::Time::now());
 }
 
 void ChassisGimbalShooterManual::shiftRelease()
