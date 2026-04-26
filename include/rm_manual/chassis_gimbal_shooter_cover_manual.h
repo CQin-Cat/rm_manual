@@ -26,6 +26,7 @@ protected:
   void checkKeyboard(const rm_msgs::DbusData::ConstPtr& dbus_data) override;
   void checkReferee() override;
   void sendCommand(const ros::Time& time) override;
+  void remoteControlTurnOn() override;
   void rightSwitchDownRise() override;
   void rightSwitchMidRise() override;
   void rightSwitchUpRise() override;
@@ -49,9 +50,7 @@ protected:
   void bRelease() override
   {
   }
-  void zPress() override
-  {
-  }
+  void zPress() override;
   void ctrlCPress() override
   {
   }
@@ -61,21 +60,26 @@ protected:
   virtual void ctrlEPress();
   virtual void ctrlERelease();
 
-  ros::Subscriber wheel_online_sub_;
-
   double low_speed_scale_{}, normal_speed_scale_{};
   double exit_buff_mode_duration_{};
   double gyro_speed_limit_{};
   double sin_gyro_base_scale_{ 1. }, sin_gyro_amplitude_{ 0. }, sin_gyro_period_{ 1. }, sin_gyro_phase_{ 0. };
+
+  rm_common::GimbalCommandSender* base_yaw_cmd_sender_{};  // for jelly standard
+  rm_common::GimbalCommandSender* base_pitch_cmd_sender_{};
+
   rm_common::SwitchDetectionCaller* switch_buff_srv_{};
   rm_common::SwitchDetectionCaller* switch_buff_type_srv_{};
   rm_common::SwitchDetectionCaller* switch_exposure_srv_{};
+
   InputEvent ctrl_z_event_, z_event_, ctrl_e_event_;
+
   std::string supply_frame_;
   std::string wireless_frame_;
   ros::Time last_switch_time_;
-  bool supply_ = { false };
-  bool need_wireless_ = { false };
+  bool ziped_{ false };
+  bool supply_{ false };
+  bool need_wireless_{ false };
   int count_{};
 };
 }  // namespace rm_manual

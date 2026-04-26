@@ -9,6 +9,17 @@ namespace rm_manual
 ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle& nh, ros::NodeHandle& nh_referee)
   : ChassisGimbalShooterManual(nh, nh_referee)
 {
+  if (nh.hasParam("base_yaw"))
+  {
+    ros::NodeHandle base_yaw_nh(nh, "base_yaw");
+    base_yaw_cmd_sender_ = new rm_common::GimbalCommandSender(base_yaw_nh);
+  }
+  if (nh.hasParam("base_pitch"))
+  {
+    ros::NodeHandle base_pitch_nh(nh, "base_pitch");
+    base_pitch_cmd_sender_ = new rm_common::GimbalCommandSender(base_pitch_nh);
+  }
+
   nh.param("supply_frame", supply_frame_, std::string("supply_frame"));
   ros::NodeHandle wireless_nh(nh, "wireless");
   nh.param("wireless_frame", wireless_frame_, std::string("wireless_frame"));
@@ -39,6 +50,18 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
   z_event_.setRising(boost::bind(&ChassisGimbalShooterCoverManual::zPress, this));
   ctrl_e_event_.setEdge(boost::bind(&ChassisGimbalShooterCoverManual::ctrlEPress, this),
                         boost::bind(&ChassisGimbalShooterCoverManual::ctrlERelease, this));
+}
+
+void ChassisGimbalShooterCoverManual::remoteControlTurnOn()
+{
+  ChassisGimbalShooterManual::remoteControlTurnOn();
+  if (controller_manager_.hasController("controllers/base_yaw_controller"))
+    controller_manager_.stopController("controllers/base_yaw_controller");
+  if (base_pitch_cmd_sender_)
+  {
+    base_pitch_cmd_sender_->setMode(rm_msgs::GimbalCmd::TRAJ);
+    ziped_ = true;
+  }
 }
 
 void ChassisGimbalShooterCoverManual::changeSpeedMode(SpeedMode speed_mode)
@@ -137,24 +160,44 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
     chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
 
   ChassisGimbalShooterManual::sendCommand(time);
+  if (base_yaw_cmd_sender_)
+  {
+    auto base_yaw_msg = base_yaw_cmd_sender_->getMsg();
+    *base_yaw_msg = *gimbal_cmd_sender_->getMsg();
+    base_yaw_msg->accel_pitch = base_yaw_msg->rate_pitch = base_yaw_msg->traj_pitch = 0;
+    base_yaw_cmd_sender_->sendCommand(time);
+  }
+  if (base_pitch_cmd_sender_)
+  {
+    if (ziped_)
+      base_pitch_cmd_sender_->setGimbalTraj(0, 0);
+    else
+      base_pitch_cmd_sender_->setGimbalTraj(0, 0.5);
+    base_pitch_cmd_sender_->sendCommand(time);
+  }
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchDownRise()
 {
   ChassisGimbalShooterManual::rightSwitchDownRise();
   supply_ = true;
+  ziped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchMidRise()
 {
   ChassisGimbalShooterManual::rightSwitchMidRise();
+  if (controller_manager_.hasController("controllers/base_yaw_controller"))
+    controller_manager_.startController("controllers/base_yaw_controller");
   supply_ = false;
+  ziped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchUpRise()
 {
   ChassisGimbalShooterManual::rightSwitchUpRise();
   supply_ = false;
+  ziped_ = true;
 }
 void ChassisGimbalShooterCoverManual::mouseRightPress()
 {
@@ -317,6 +360,9 @@ void ChassisGimbalShooterCoverManual::dRelease()
     vel_cmd_sender_->setAngularZVel(is_gyro_ ? 1 : 0, gyro_speed_limit_);
 }
 
+void ChassisGimbalShooterCoverManual::zPress()
+{ ziped_ = !ziped_; }
+
 void ChassisGimbalShooterCoverManual::ctrlZPress()
 {
   if (!supply_)
@@ -331,9 +377,7 @@ void ChassisGimbalShooterCoverManual::ctrlZPress()
 }
 
 void ChassisGimbalShooterCoverManual::ctrlZRelease()
-{
-  gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-};
+{ gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE); };
 
 void ChassisGimbalShooterCoverManual::ctrlXPress()
 {
