@@ -777,7 +777,7 @@ void ChassisGimbalShooterManual::xPress()
   {
     ROS_WARN("%s", ex.what());
   }
-  gimbal_cmd_sender_->setTrajFrameId("base_link");
+  gimbal_cmd_sender_->setGimbalTrajFrameId("base_link");
   gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::TRAJ);
   gimbal_cmd_sender_->setGimbalTraj(yaw + M_PI, pitch);
 }
@@ -817,7 +817,7 @@ void ChassisGimbalShooterManual::zPress()
   {
     ballistic_yaw_ = ballistic_solution_.data[0];
     ballistic_pitch_ = ballistic_solution_.data[1];
-    gimbal_cmd_sender_->setTrajFrameId("base_link");
+    gimbal_cmd_sender_->setGimbalTrajFrameId("base_link");
     gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::TRAJ);
     gimbal_cmd_sender_->setGimbalTraj(ballistic_yaw_, ballistic_pitch_);
     setChassisMode(rm_msgs::ChassisCmd::DEPLOY);
