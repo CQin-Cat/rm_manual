@@ -361,7 +361,9 @@ void ChassisGimbalShooterCoverManual::dRelease()
 }
 
 void ChassisGimbalShooterCoverManual::zPress()
-{ ziped_ = !ziped_; }
+{
+  ziped_ = !ziped_;
+}
 
 void ChassisGimbalShooterCoverManual::ctrlZPress()
 {
@@ -377,7 +379,9 @@ void ChassisGimbalShooterCoverManual::ctrlZPress()
 }
 
 void ChassisGimbalShooterCoverManual::ctrlZRelease()
-{ gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE); };
+{
+  gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
+};
 
 void ChassisGimbalShooterCoverManual::ctrlXPress()
 {
