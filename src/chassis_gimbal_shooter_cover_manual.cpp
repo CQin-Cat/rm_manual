@@ -17,7 +17,9 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
   if (nh.hasParam("base_pitch"))
   {
     ros::NodeHandle base_pitch_nh(nh, "base_pitch");
-    base_pitch_cmd_sender_ = new rm_common::GimbalCommandSender(base_pitch_nh);
+    std::string base_pitch_topic;
+    base_pitch_nh.param("topic", base_pitch_topic, std::string("/controllers/base_pitch_controller/command"));
+    base_pitch_pub_ = base_pitch_nh.advertise<std_msgs::Float64>(base_pitch_topic, 1);
   }
 
   nh.param("supply_frame", supply_frame_, std::string("supply_frame"));
@@ -57,11 +59,7 @@ void ChassisGimbalShooterCoverManual::remoteControlTurnOn()
   ChassisGimbalShooterManual::remoteControlTurnOn();
   if (controller_manager_.hasController("controllers/base_yaw_controller"))
     controller_manager_.stopController("controllers/base_yaw_controller");
-  if (base_pitch_cmd_sender_)
-  {
-    base_pitch_cmd_sender_->setMode(rm_msgs::GimbalCmd::TRAJ);
-    ziped_ = true;
-  }
+  ziped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::changeSpeedMode(SpeedMode speed_mode)
@@ -159,22 +157,25 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
   else
     chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
 
-  ChassisGimbalShooterManual::sendCommand(time);
   if (base_yaw_cmd_sender_)
   {
     auto base_yaw_msg = base_yaw_cmd_sender_->getMsg();
+    if (ziped_)
+    {
+      gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
+      gimbal_cmd_sender_->getMsg()->rate_pitch = 0.5;
+    }
     *base_yaw_msg = *gimbal_cmd_sender_->getMsg();
     base_yaw_msg->accel_pitch = base_yaw_msg->rate_pitch = base_yaw_msg->traj_pitch = 0;
     base_yaw_cmd_sender_->sendCommand(time);
   }
-  if (base_pitch_cmd_sender_)
+  if (base_pitch_pub_)
   {
-    if (ziped_)
-      base_pitch_cmd_sender_->setGimbalTraj(0, 0);
-    else
-      base_pitch_cmd_sender_->setGimbalTraj(0, 0.5);
-    base_pitch_cmd_sender_->sendCommand(time);
+    std_msgs::Float64 cmd;
+    cmd.data = ziped_ ? 0.0 : 0.65;
+    base_pitch_pub_.publish(cmd);
   }
+  ChassisGimbalShooterManual::sendCommand(time);
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchDownRise()
@@ -199,6 +200,18 @@ void ChassisGimbalShooterCoverManual::rightSwitchUpRise()
   supply_ = false;
   ziped_ = true;
 }
+
+void ChassisGimbalShooterCoverManual::leftSwitchMidRise()
+{
+  ziped_ = false;
+}
+
+void ChassisGimbalShooterCoverManual::leftSwitchDownRise()
+{
+  ChassisGimbalShooterManual::leftSwitchDownRise();
+  ziped_ = true;
+}
+
 void ChassisGimbalShooterCoverManual::mouseRightPress()
 {
   ChassisGimbalShooterManual::mouseRightPress();
