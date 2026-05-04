@@ -157,23 +157,27 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
   else
     chassis_cmd_sender_->getMsg()->follow_source_frame = "yaw";
 
-  if (base_yaw_cmd_sender_)
-  {
-    auto base_yaw_msg = base_yaw_cmd_sender_->getMsg();
-    if (ziped_)
-    {
-      gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-      gimbal_cmd_sender_->getMsg()->rate_pitch = 0.5;
-    }
-    *base_yaw_msg = *gimbal_cmd_sender_->getMsg();
-    base_yaw_msg->accel_pitch = base_yaw_msg->rate_pitch = base_yaw_msg->traj_pitch = 0;
-    base_yaw_cmd_sender_->sendCommand(time);
-  }
   if (base_pitch_pub_)
   {
     std_msgs::Float64 cmd;
-    cmd.data = ziped_ ? 0.0 : 0.65;
+    if (ziped_)
+    {
+      cmd.data = 0.0;
+      gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
+      gimbal_cmd_sender_->getMsg()->rate_pitch = 1.0;
+    }
+    else
+    {
+      cmd.data = 0.65;
+    }
     base_pitch_pub_.publish(cmd);
+  }
+  if (base_yaw_cmd_sender_)
+  {
+    auto base_yaw_msg = base_yaw_cmd_sender_->getMsg();
+    *base_yaw_msg = *gimbal_cmd_sender_->getMsg();
+    base_yaw_msg->accel_pitch = base_yaw_msg->rate_pitch = base_yaw_msg->traj_pitch = 0;
+    base_yaw_cmd_sender_->sendCommand(time);
   }
   ChassisGimbalShooterManual::sendCommand(time);
 }
