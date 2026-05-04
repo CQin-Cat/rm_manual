@@ -164,7 +164,7 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
     {
       cmd.data = 0.0;
       gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-      gimbal_cmd_sender_->getMsg()->rate_pitch = 1.0;
+      gimbal_cmd_sender_->getMsg()->rate_pitch = 0.7;
     }
     else
     {
@@ -207,6 +207,7 @@ void ChassisGimbalShooterCoverManual::rightSwitchUpRise()
 
 void ChassisGimbalShooterCoverManual::leftSwitchMidRise()
 {
+  ChassisGimbalShooterManual::leftSwitchMidRise();
   ziped_ = false;
 }
 
