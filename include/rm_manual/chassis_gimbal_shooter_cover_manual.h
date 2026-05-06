@@ -7,6 +7,9 @@
 #include "rm_manual/chassis_gimbal_shooter_manual.h"
 
 #include <std_msgs/Float64.h>
+#include <algorithm>
+#include <rm_common/math_utilities.h>
+#include <control_toolbox/pid.h>
 
 namespace rm_manual
 {
@@ -64,6 +67,8 @@ protected:
   virtual void ctrlEPress();
   virtual void ctrlERelease();
 
+  void getPitchErr(double& position);
+
   double low_speed_scale_{}, normal_speed_scale_{};
   double exit_buff_mode_duration_{};
   double gyro_speed_limit_{};
@@ -78,12 +83,12 @@ protected:
 
   InputEvent ctrl_z_event_, z_event_, ctrl_e_event_;
 
-  std::string supply_frame_;
   std::string wireless_frame_;
   ros::Time last_switch_time_;
-  bool ziped_{ false };
-  bool supply_{ false };
   bool need_wireless_{ false };
   int count_{};
+
+  bool zipped_{ false };
+  std::shared_ptr<control_toolbox::Pid> zipped_pitch_rate_pid_{};
 };
 }  // namespace rm_manual

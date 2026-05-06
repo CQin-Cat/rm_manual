@@ -15,6 +15,7 @@
     <depend>sensor_msgs</depend>
     <depend>rm_msgs</depend>
     <depend>rm_common</depend>
+    <depend>control_toolbox</depend>
     <depend>std_msgs</depend>
     <depend>rm_ecat_msgs</depend>
     <depend>nav_msgs</depend>

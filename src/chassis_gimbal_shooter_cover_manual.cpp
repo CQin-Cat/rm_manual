@@ -17,12 +17,16 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
   if (nh.hasParam("base_pitch"))
   {
     ros::NodeHandle base_pitch_nh(nh, "base_pitch");
-    std::string base_pitch_topic;
+    std::string base_pitch_topic{};
     base_pitch_nh.param("topic", base_pitch_topic, std::string("/controllers/base_pitch_controller/command"));
     base_pitch_pub_ = base_pitch_nh.advertise<std_msgs::Float64>(base_pitch_topic, 1);
+    zipped_pitch_rate_pid_ = std::make_shared<control_toolbox::Pid>();
+    if (base_pitch_nh.hasParam("zipped_pitch_rate_pid"))
+    {
+      zipped_pitch_rate_pid_->init(ros::NodeHandle(base_pitch_nh, "zipped_pitch_rate_pid"));
+    }
   }
 
-  nh.param("supply_frame", supply_frame_, std::string("supply_frame"));
   ros::NodeHandle wireless_nh(nh, "wireless");
   nh.param("wireless_frame", wireless_frame_, std::string("wireless_frame"));
   ros::NodeHandle buff_switch_nh(nh, "buff_switch");
@@ -59,7 +63,7 @@ void ChassisGimbalShooterCoverManual::remoteControlTurnOn()
   ChassisGimbalShooterManual::remoteControlTurnOn();
   if (controller_manager_.hasController("controllers/base_yaw_controller"))
     controller_manager_.stopController("controllers/base_yaw_controller");
-  ziped_ = true;
+  zipped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::changeSpeedMode(SpeedMode speed_mode)
@@ -147,6 +151,37 @@ void ChassisGimbalShooterCoverManual::checkKeyboard(const rm_msgs::DbusData::Con
   ctrl_e_event_.update(dbus_data->key_ctrl & dbus_data->key_e);
 }
 
+void ChassisGimbalShooterCoverManual::getPitchErr(double& err)
+{
+  static int pitch_index = -1;
+  static int base_pitch_index = -1;
+  if (pitch_index < 0)
+  {
+    auto it = std::find(joint_state_.name.begin(), joint_state_.name.end(), "pitch_joint");
+    if (it == joint_state_.name.end())
+    {
+      ROS_WARN_THROTTLE(1.0, "Pitch joint %s not found in joint_states.", "pitch_joint");
+      return;
+    }
+    pitch_index = std::distance(joint_state_.name.begin(), it);
+  }
+  if (base_pitch_index < 0)
+  {
+    auto it = std::find(joint_state_.name.begin(), joint_state_.name.end(), "base_pitch_joint");
+    if (it == joint_state_.name.end())
+    {
+      ROS_WARN_THROTTLE(1.0, "Base pitch joint %s not found in joint_states.", "base_pitch_joint");
+      return;
+    }
+    base_pitch_index = std::distance(joint_state_.name.begin(), it);
+  }
+  if (pitch_index >= 0 && base_pitch_index >= 0 && static_cast<size_t>(pitch_index) < joint_state_.position.size() &&
+      static_cast<size_t>(base_pitch_index) < joint_state_.position.size())
+  {
+    err = -joint_state_.position[base_pitch_index] - joint_state_.position[pitch_index];
+  }
+}
+
 void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
 {
   if (need_wireless_)
@@ -160,11 +195,14 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
   if (base_pitch_pub_)
   {
     std_msgs::Float64 cmd;
-    if (ziped_)
+    if (zipped_)
     {
       cmd.data = 0.0;
       gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-      gimbal_cmd_sender_->getMsg()->rate_pitch = 0.7;
+      double pitch_err = 0.0;
+      getPitchErr(pitch_err);
+      double cmd_rate = zipped_pitch_rate_pid_->computeCommand(pitch_err, ros::Duration(0.01));
+      gimbal_cmd_sender_->getMsg()->rate_pitch = cmd_rate;
     }
     else
     {
@@ -185,8 +223,7 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
 void ChassisGimbalShooterCoverManual::rightSwitchDownRise()
 {
   ChassisGimbalShooterManual::rightSwitchDownRise();
-  supply_ = true;
-  ziped_ = true;
+  zipped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchMidRise()
@@ -194,27 +231,25 @@ void ChassisGimbalShooterCoverManual::rightSwitchMidRise()
   ChassisGimbalShooterManual::rightSwitchMidRise();
   if (controller_manager_.hasController("controllers/base_yaw_controller"))
     controller_manager_.startController("controllers/base_yaw_controller");
-  supply_ = false;
-  ziped_ = true;
+  zipped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::rightSwitchUpRise()
 {
   ChassisGimbalShooterManual::rightSwitchUpRise();
-  supply_ = false;
-  ziped_ = true;
+  zipped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::leftSwitchMidRise()
 {
   ChassisGimbalShooterManual::leftSwitchMidRise();
-  ziped_ = false;
+  zipped_ = false;
 }
 
 void ChassisGimbalShooterCoverManual::leftSwitchDownRise()
 {
   ChassisGimbalShooterManual::leftSwitchDownRise();
-  ziped_ = true;
+  zipped_ = true;
 }
 
 void ChassisGimbalShooterCoverManual::mouseRightPress()
@@ -380,26 +415,14 @@ void ChassisGimbalShooterCoverManual::dRelease()
 
 void ChassisGimbalShooterCoverManual::zPress()
 {
-  ziped_ = !ziped_;
+  zipped_ = !zipped_;
 }
 
 void ChassisGimbalShooterCoverManual::ctrlZPress()
 {
-  if (!supply_)
-    chassis_cmd_sender_->power_limit_->updateState(rm_common::PowerLimit::CHARGE);
-  else
-    chassis_cmd_sender_->power_limit_->updateState(rm_common::PowerLimit::NORMAL);
-  supply_ = !supply_;
-  if (supply_)
-    changeSpeedMode(LOW);
-  else
-    changeSpeedMode(NORMAL);
 }
 
-void ChassisGimbalShooterCoverManual::ctrlZRelease()
-{
-  gimbal_cmd_sender_->setMode(rm_msgs::GimbalCmd::RATE);
-};
+void ChassisGimbalShooterCoverManual::ctrlZRelease(){};
 
 void ChassisGimbalShooterCoverManual::ctrlXPress()
 {

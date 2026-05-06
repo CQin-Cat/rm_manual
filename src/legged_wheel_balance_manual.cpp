@@ -95,11 +95,9 @@ void LeggedWheelBalanceManual::rightSwitchMidRise()
 void LeggedWheelBalanceManual::ctrlZPress()
 {
   BalanceManual::ctrlZPress();
-  if (!supply_)
-  {
-    setChassisMode(rm_msgs::ChassisCmd::FOLLOW);
-    legCommandSender_->setLgeLength(0.18);
-  }
+
+  setChassisMode(rm_msgs::ChassisCmd::FOLLOW);
+  legCommandSender_->setLgeLength(0.18);
 }
 
 void LeggedWheelBalanceManual::shiftRelease()
