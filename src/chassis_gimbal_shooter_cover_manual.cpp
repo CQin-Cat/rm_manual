@@ -141,6 +141,7 @@ void ChassisGimbalShooterCoverManual::checkReferee()
     manual_to_referee_pub_data_.det_target = switch_buff_type_srv_->getTarget();
   else
     manual_to_referee_pub_data_.det_target = switch_detection_srv_->getTarget();
+  manual_to_referee_pub_data_.zip_state = zipped_;
   ChassisGimbalShooterManual::checkReferee();
 }
 
