@@ -54,6 +54,7 @@ protected:
   void aRelease() override;
   void sRelease() override;
   void dRelease() override;
+  void rPress() override;
   void bRelease() override
   {
   }
@@ -61,6 +62,7 @@ protected:
   void ctrlCPress() override
   {
   }
+  virtual void rRelease();
   virtual void ctrlZPress();
   virtual void ctrlZRelease();
   virtual void ctrlXPress();

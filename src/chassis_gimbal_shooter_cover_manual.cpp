@@ -50,6 +50,8 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
                         boost::bind(&ChassisGimbalShooterCoverManual::ctrlZRelease, this));
   ctrl_x_event_.setRising(boost::bind(&ChassisGimbalShooterCoverManual::ctrlXPress, this));
   ctrl_r_event_.setActiveHigh(boost::bind(&ChassisGimbalShooterCoverManual::ctrlRPressing, this));
+  r_event_.setEdge(boost::bind(&ChassisGimbalShooterCoverManual::rPress, this),
+                   boost::bind(&ChassisGimbalShooterCoverManual::rRelease, this));
   e_event_.setEdge(boost::bind(&ChassisGimbalShooterCoverManual::ePress, this),
                    boost::bind(&ChassisGimbalShooterCoverManual::eRelease, this));
   q_event_.setRising(boost::bind(&ChassisGimbalShooterCoverManual::qPress, this));
@@ -207,7 +209,7 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
     }
     else
     {
-      cmd.data = 0.65;
+      cmd.data = 0.5;
     }
     base_pitch_pub_.publish(cmd);
   }
@@ -238,7 +240,7 @@ void ChassisGimbalShooterCoverManual::rightSwitchMidRise()
 void ChassisGimbalShooterCoverManual::rightSwitchUpRise()
 {
   ChassisGimbalShooterManual::rightSwitchUpRise();
-  zipped_ = true;
+  zipped_ = false;
 }
 
 void ChassisGimbalShooterCoverManual::leftSwitchMidRise()
@@ -416,7 +418,16 @@ void ChassisGimbalShooterCoverManual::dRelease()
 
 void ChassisGimbalShooterCoverManual::zPress()
 {
-  zipped_ = !zipped_;
+}
+
+void ChassisGimbalShooterCoverManual::rPress()
+{
+  zipped_ = true;
+}
+
+void ChassisGimbalShooterCoverManual::rRelease()
+{
+  zipped_ = false;
 }
 
 void ChassisGimbalShooterCoverManual::ctrlZPress()
