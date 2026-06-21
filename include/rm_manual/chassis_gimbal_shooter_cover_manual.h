@@ -75,7 +75,7 @@ protected:
   double gyro_speed_limit_{};
   double sin_gyro_base_scale_{ 1. }, sin_gyro_amplitude_{ 0. }, sin_gyro_period_{ 1. }, sin_gyro_phase_{ 0. };
 
-  rm_common::GimbalCommandSender* base_yaw_cmd_sender_{};  // for jelly standard
+  rm_common::GimbalCommandSender* base_yaw_cmd_sender_{};                 // for jelly standard
   rm_common::JointPositionBinaryCommandSender* base_pitch_cmd_sender_{};  // for jelly standard
 
   rm_common::SwitchDetectionCaller* switch_buff_srv_{};
