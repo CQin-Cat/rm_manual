@@ -9,11 +9,6 @@ namespace rm_manual
 ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle& nh, ros::NodeHandle& nh_referee)
   : ChassisGimbalShooterManual(nh, nh_referee)
 {
-  if (nh.hasParam("base_yaw"))
-  {
-    ros::NodeHandle base_yaw_nh(nh, "base_yaw");
-    base_yaw_cmd_sender_ = new rm_common::GimbalCommandSender(base_yaw_nh);
-  }
   if (nh.hasParam("base_pitch"))
   {
     ros::NodeHandle base_pitch_nh(nh, "base_pitch");
@@ -63,8 +58,6 @@ ChassisGimbalShooterCoverManual::ChassisGimbalShooterCoverManual(ros::NodeHandle
 void ChassisGimbalShooterCoverManual::remoteControlTurnOn()
 {
   ChassisGimbalShooterManual::remoteControlTurnOn();
-  if (controller_manager_.hasController("controllers/base_yaw_controller"))
-    controller_manager_.stopController("controllers/base_yaw_controller");
   zipped_ = true;
 }
 
@@ -213,13 +206,6 @@ void ChassisGimbalShooterCoverManual::sendCommand(const ros::Time& time)
     }
     base_pitch_pub_.publish(cmd);
   }
-  if (base_yaw_cmd_sender_)
-  {
-    auto base_yaw_msg = base_yaw_cmd_sender_->getMsg();
-    *base_yaw_msg = *gimbal_cmd_sender_->getMsg();
-    base_yaw_msg->accel_pitch = base_yaw_msg->rate_pitch = base_yaw_msg->traj_pitch = 0;
-    base_yaw_cmd_sender_->sendCommand(time);
-  }
   ChassisGimbalShooterManual::sendCommand(time);
 }
 
@@ -232,8 +218,6 @@ void ChassisGimbalShooterCoverManual::rightSwitchDownRise()
 void ChassisGimbalShooterCoverManual::rightSwitchMidRise()
 {
   ChassisGimbalShooterManual::rightSwitchMidRise();
-  if (controller_manager_.hasController("controllers/base_yaw_controller"))
-    controller_manager_.startController("controllers/base_yaw_controller");
   zipped_ = true;
 }
 
